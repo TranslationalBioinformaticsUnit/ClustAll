@@ -57,8 +57,3 @@ importFrom(stats,hclust)
 importFrom(stats,median)
 importFrom(stats,quantile)
 importFrom(stats,sd)
-<<<<<<< HEAD
-=======
-importFrom(utils,capture.output)
-importFrom(utils,txtProgressBar)
->>>>>>> master

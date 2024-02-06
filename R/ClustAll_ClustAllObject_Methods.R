@@ -453,42 +453,10 @@ setMethod(
     stratificationName="characterOrNA"),
   definition=function(Object, stratificationName) {
 
-<<<<<<< HEAD
     if (is.null(Object@dataValidation)) {
       message("The ClustALL Object does not include labels.")
       message("Please create a new object or modify the object with the original labelling data. \nFor that check addValidationData method")
       stop()
-=======
-        if (is.null(Object@dataValidation)) {
-            message("The ClustALL Object does not include labels.")
-            message("Please create a new object or modify the object with the original labelling data. \nFor that check addValidationData method")
-            stop()
-        }
-
-        if (isProcessed(Object) == FALSE) {
-            message("The object has not been processed yet.")
-            message("You need to execute runClustAll.")
-            message("Note that the number of cores to use can be specified.")
-            stop()
-        }
-
-        checkCluster(stratificationName, Object@summary_clusters)
-
-        if (length(stratificationName) != 1) {
-            message("More than one stratifications have been selected.")
-            message("Only the first one will be considered.")
-            stratificationName <- stratificationName[1]
-        }
-
-        df <- cluster2data(Object, stratificationName)
-        res <- table(df[,stratificationName], Object@dataValidation)
-        sensitivity <- res[3]/(res[3]+res[4])
-        specifity <- res[2]/(res[2]+res[1])
-        showRes <- c(sensitivity, specifity)
-        names(showRes) <- c("sensitivity", "specificity")
-
-        return(showRes)
->>>>>>> master
     }
 
     if (isProcessed(Object) == FALSE) {

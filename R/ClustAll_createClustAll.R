@@ -45,7 +45,6 @@ setGeneric(
 )
 
 setMethod(
-<<<<<<< HEAD
   f="createClustAll",
   signature=signature(
     data="data.frame",
@@ -59,21 +58,6 @@ setMethod(
     if (is.null(nImputation)) {nImputation <- 0}
     data <- checkDataIntroduced(data)
     nImputation <- validnImputation(nImputation, imputedNull)
-=======
-    f="createClustAll",
-    signature=signature(
-        data="data.frame",
-        nImputation="numericOrNA",
-        dataImputed="ANY",
-        colValidation="characterOrNA"),
-    definition=function(data, nImputation=NULL,
-                        dataImputed=NULL, colValidation=NULL) {
-        dataOriginal <- data
-        if (is.null(dataImputed)) {imputedNull <- TRUE} else {imputedNull <- FALSE}
-        if (is.null(nImputation)) {nImputation <- 0}
-        data <- checkDataIntroduced(data)
-        nImputation <- validnImputation(nImputation, imputedNull)
->>>>>>> master
 
     if (!is.null(colValidation)) {
       checkColumn(data, colValidation)
