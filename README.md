@@ -22,7 +22,6 @@ ClustAll accepts missing data, binary, categorical, and numerical variables, int
 
 -   **Visualization** functions for interpreting clustering results and comparing different stratifications.
 
-\br
 
 ![](vignettes/img/workflow.jpg)
 
