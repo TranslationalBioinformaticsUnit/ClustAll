@@ -2,26 +2,11 @@
 # These functions are not meant to be invoked directly by the user.
 # See the createClusteAll function instead.
 
-
-# This function creates an empty matrix to store the clustering
-# stratification summaries
-createEmptyMatrix <- function(nvariables, data_use) {
-  summary_matrices <- vector("list", nvariables)
-  for(i in seq_len(nvariables)) {
-    summary_matrices[[i]] <- matrix(0,nrow(data_use),nrow(data_use))
-  }
-
-  return(summary_matrices)
-}
-
-
 # This function creates a list with FMB objects to store the results
 createEmptyArrays <- function(nvariables, data_use) {
-  summary_matrices <- vector("list", nvariables)
-  for(i in seq_len(nvariables)) {
-    summary_matrices[[i]] <- as_FBM(matrix(0,nrow(data_use),nrow(data_use)))
-  }
-
+  summary_matrices <- lapply(seq_len(nvariables), function(i) {
+    as_FBM(matrix(0, nrow(data_use), nrow(data_use)))
+  })
   return(summary_matrices)
 }
 
@@ -48,6 +33,12 @@ obtainImputationData <- function(imp, impgo) {
   return(impData)
 }
 
+# This function reads the slot of process from the object
+isProcessed <- function(Object) {
+  return(Object@processed)
+}
+
+
 # This function reduces the dimension by grouping the input variables into a
 # dendrogram and generating PCAs for the resulting groups of variables
 obtainDataPCA <- function(impData, variables_clust,
@@ -55,7 +46,7 @@ obtainDataPCA <- function(impData, variables_clust,
                           heights_cut) {
   treego <- cutree(variables_clust, h=possible_heights[heights_cut])
   groups_go <- unique(treego)
-  variables_use <- names(treego[treego==groups_go[1]])
+  variables_use <- base::names(treego[treego==groups_go[1]])
 
   if (length(variables_use)==1) {
     data_PCA <- impData[,variables_use]
@@ -68,7 +59,7 @@ obtainDataPCA <- function(impData, variables_clust,
   if (length(groups_go) > 1) {
     for (h in seq(from=2, to=length(groups_go))) {
 
-      variables_use <- names(treego[treego==groups_go[h]])
+      variables_use <- base::names(treego[treego==groups_go[h]])
       if (length(variables_use) == 1) {
         data_PCA <- cbind(data_PCA,impData[,variables_use])
 
@@ -91,7 +82,7 @@ cstats.table_PAM <- function(dist, k) {
   clust.assess <- c("cluster.number", "wb.ratio", "dunn", "avg.silwidth")
   output.stats <- matrix(ncol = length(clust.assess), nrow = k-1)
 
-  for(i in seq(from=2, to=k)) {
+  for (i in seq(from=2, to=k)) {
     pam_fit <- cluster::pam(dist, diss = TRUE, k = i)
     pam_clust_num <- (pam_fit$clustering)
 
@@ -115,17 +106,18 @@ cstats.table_PAM <- function(dist, k) {
 
 # This function function applies the H-clust clustering method,
 # considering Gower distance, and return the results (d)
-cstats.table_hclust <- function(dist, tree,k) {
+cstats.table_hclust <- function(dist, tree, k) {
   clust.assess <- c("cluster.number","wb.ratio","dunn","avg.silwidth")
   output.stats <- matrix(ncol = length(clust.assess), nrow = k-1)
 
-  for (i in seq(from=2, to=k)) {
-    output.stats[i-1,] <- unlist(cluster.stats(d = dist,
-                                               clustering = cutree(tree, k=i))[clust.assess])
-  }
+  result_list <- lapply(seq(from = 2, to = k), function(i) {
+    unlist(cluster.stats(d = dist, clustering = cutree(tree, k = i))[clust.assess])
+  })
+
+  output.stats <- do.call(rbind, result_list)
 
   colnames(output.stats) <- clust.assess
-  rownames(output.stats) <- c(seq(from=2, to=k))
+  rownames(output.stats) <- seq(from = 2, to = k)
 
   output.stats.df <- as.data.frame(output.stats)
 
@@ -137,19 +129,20 @@ cstats.table_hclust <- function(dist, tree,k) {
 }
 
 
+
 # This function filters the summary clusters with 0s and joins the four
 # of the into a vector
 obtainSummaryCluster <- function(summary_clusters_a, summary_clusters_b,
                                  summary_clusters_c, summary_clusters_d) {
   # remove those rows with only 0s
-  nclust_a<-as.data.frame(summary_clusters_a[which(apply(summary_clusters_a[],
-                                                         1, sum)>0),])
-  nclust_b<-as.data.frame(summary_clusters_b[which(apply(summary_clusters_b[],
-                                                         1, sum)>0),])
-  nclust_c<-as.data.frame(summary_clusters_c[which(apply(summary_clusters_c[],
-                                                         1, sum)>0),])
-  nclust_d<-as.data.frame(summary_clusters_d[which(apply(summary_clusters_d[],
-                                                         1, sum)>0),])
+  nclust_a <- as.data.frame(summary_clusters_a[which(apply(summary_clusters_a[],
+                                                           1, sum)>0),])
+  nclust_b <- as.data.frame(summary_clusters_b[which(apply(summary_clusters_b[],
+                                                           1, sum)>0),])
+  nclust_c <- as.data.frame(summary_clusters_c[which(apply(summary_clusters_c[],
+                                                           1, sum)>0),])
+  nclust_d <- as.data.frame(summary_clusters_d[which(apply(summary_clusters_d[],
+                                                           1, sum)>0),])
 
   # put all the clusters together
   summary_n_clust <- c(apply(nclust_a, 1, function(x) median(x, na.rm=TRUE)),
@@ -188,6 +181,7 @@ cluster_similarity_adapt <- function(labels1, labels2,
          rand = rand_indep(labels1, labels2))
 }
 
+
 jaccard_indep <- function(labels1, labels2) {
   com_table <- comembership_table(labels1, labels2)
   jaccard_out <- with(com_table, n_11 / (n_11 + n_10 + n_01))
@@ -202,10 +196,12 @@ jaccard_indep <- function(labels1, labels2) {
   jaccard_out
 }
 
+
 rand_indep <- function(labels1, labels2) {
   com_table <- comembership_table(labels1, labels2)
   with(com_table, (n_11 + n_00) / (n_11 + n_10 + n_01 + n_00))
 }
+
 
 #' @references Tibshirani, R. and  Walther, G. (2005). Cluster Validation by
 #' Prediction Strength. Journal of Computational and Graphical Statistics, 14,3,
@@ -279,4 +275,6 @@ comembership_table <- function(labels1, labels2) {
   return(list(n_11 = n_11, n_10 = n_10, n_01 = n_01, n_00 = n_00))
 }
 
+
 # END OF ClustAll_runClustAll_internal.R
+

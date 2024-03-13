@@ -5,6 +5,9 @@
 \alias{listOrNULL}
 \alias{listOrNULL-class}
 \title{Class Union listOrNULL}
+\value{
+listOrNULL class object
+}
 \description{
 Contains either list, NULL or missing object
 }

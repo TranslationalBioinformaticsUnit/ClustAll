@@ -2,7 +2,7 @@ Package: ClustAll
 Type: Package
 Title: ClustAll: Data driven strategy to find groups
         of patients within complex diseases
-Version: 0.99.2
+Version: 0.99.11
 Authors@R: c(person("Asier", "Ortega-Legarreta", role = c("aut","cre"),  
            email = "aortegal@navarra.es", 
            comment = c(ORCID = "0009-0000-3563-5362")),
@@ -22,7 +22,7 @@ License: GPL-2
 Encoding: UTF-8
 biocViews: Software, StatisticalMethod, Clustering, DimensionReduction,
            PrincipalComponent
-RoxygenNote: 7.3.0
+RoxygenNote: 7.3.1
 VignetteBuilder: knitr
 git_url: https://github.com/TranslationalBioinformaticsUnit/ClustAll
 Packaged: 2023-08-10 12:55:36 UTC; asier.ortega

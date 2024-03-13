@@ -10,6 +10,9 @@ A data frame with 660 rows and 31 variables
 \usage{
 data("BreastCancerWisconsinMISSING", package = "ClustAll")
 }
+\value{
+wdbcMIDS dataset
+}
 \description{
 We introduced imputed random values to the wdbcNA dataset.
 Using Mice. It is a mids object. \code{\link{wdbc}}

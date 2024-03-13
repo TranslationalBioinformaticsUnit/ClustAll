@@ -6,6 +6,9 @@
 \alias{characterOrNA-class}
 \title{characterOrNA
 Class union of character, null or missing}
+\value{
+characterOrNA class object
+}
 \description{
 Contains either character, NULL or missing object
 }

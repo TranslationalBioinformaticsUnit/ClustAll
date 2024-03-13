@@ -4,6 +4,9 @@
 \name{ClustAllObject-class}
 \alias{ClustAllObject-class}
 \title{ClustAllObject}
+\value{
+ClustAllObject class object
+}
 \description{
 Stores the original data used, the imputed datasets and the
 results of the ClustAll pipeline.

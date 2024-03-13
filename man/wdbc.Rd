@@ -26,6 +26,9 @@ A data frame with 660 rows and 31 variables
 \usage{
 data("BreastCancerWisconsin", package = "ClustAll")
 }
+\value{
+wdbc dataset
+}
 \description{
 A dataset containing Features are computed from a digitized image of a fine
 needle aspirate (FNA) of a breast mass.

@@ -5,6 +5,9 @@
 \alias{numericOrNA}
 \alias{numericOrNA-class}
 \title{Class Union numericOrNA}
+\value{
+numericOrNA class object
+}
 \description{
 Contains either numeric, NULL or missing object
 }

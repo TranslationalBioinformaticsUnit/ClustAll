@@ -3,8 +3,8 @@
 \name{runClustAll}
 \alias{runClustAll}
 \alias{runClustAll,ClustAllObject,numericOrNA,logicalOrNA-method}
-\title{ClustAll: Data driven strategy to find hidden subgroups of patients within
-complex diseases using clinical data}
+\title{ClustAll: Data driven strategy to find hidden subgroups of patients
+within complex diseases using clinical data}
 \usage{
 runClustAll(Object,
                    threads=1,
@@ -27,8 +27,10 @@ This method runs the ClustAll pipeline
 data("BreastCancerWisconsin", package = "ClustAll")
 wdbc <- subset(wdbc,select=c(-ID, -Diagnosis))
 wdbc <- wdbc[1:15,1:8]
+\donttest{
 obj_noNA <- createClustAll(data = wdbc)
 obj_noNA1 <- runClustAll(Object = obj_noNA, threads = 1, simplify = TRUE)
+}
 }
 \seealso{
 \code{\link{resStratification}},\code{\link{plotJACCARD}},

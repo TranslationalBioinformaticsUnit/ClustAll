@@ -5,6 +5,9 @@
 \alias{matrixOrNULL}
 \alias{matrixOrNULL-class}
 \title{matrixOrNULL}
+\value{
+matrixOrNULL class object
+}
 \description{
 Contains either matrix or NULL object
 }

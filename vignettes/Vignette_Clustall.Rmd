@@ -7,7 +7,6 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
 ---
 
-
 ```{r, include = FALSE}
 BiocStyle::markdown()
 knitr::opts_chunk$set(
@@ -18,50 +17,35 @@ knitr::opts_chunk$set(
 
 # 0. Introduction
 
-ClustAll is an R package originally designed for patient stratification
-in complex diseases.
+ClustAll is an R package designed for patient stratification in complex diseases. It addresses common challenges encountered in clinical data analysis and provides a versatile framework for identifying patient subgroups.
 
-The ClustAll framework is dedicated for identifying patient subgroups,
-addressing common challenges encountered in clinical data analysis. The
-underlying concept is that a robust stratification should be
-reproducible through various clustering methods. To achieve patient
-stratification, ClustAll employs diverse distance metrics
-(Correlation-based distance and Gower distance) and clustering methods
-(K-Means, K-Medoids, and H-Clust).
+Patient stratification is essential in biomedical research for understanding disease heterogeneity, identifying prognostic factors, and guiding personalized treatment strategies. The ClustAll underlying concept is that a robust stratification should be reproducible through various clustering methods. ClustAll employs diverse distance metrics (Correlation-based distance and Gower distance) and clustering methods (K-Means, K-Medoids, and H-Clust).
 
-Moreover, ClustAll:
+### ClustAll key features:
 
--   **Handles Diverse Data Types:** Enables the analysis of data with
-    missing values, mixed data, and correlated variables.
+-   **Handles Diverse Data Types**, including missing values, mixed data, and correlated variables.
+-   **Provides Multiple Stratification Solutions**, enabling exploration of different clustering algorithms and parameters.
+-   **Robustness Analysis**, to identify stable and reproducible clusters.
+-   **Validation** , for assessing the reliability of clustering results using clinical phenotypes (true labels) if available.
+-   **Visualization** functions for interpreting clustering results and comparing different stratifications.
 
--   **Provides Multiple Stratification Solutions:** Unlike other
-    packages, ClustAll doesn not limit results to a single
-    stratification solution.
+### Interpreting ClustAll Stratification Output
 
--   **Population-Based Robustness:** Performs a population-based
-    robustness analysis for each candidate stratification using
-    bootstrapping, ensuring the exclusion of non-robust stratifications.
+The names of ClustAll stratification outputs consist of a letter followed by a number, such as *cuts_a_9*. The letter denotes the combination of distance metric and clustering method utilized to generate the particular stratification, while the number corresponds to the embedding derived from the depth at which the dendrogram with grouped variables was cut.
 
--   **Parameter-Based Robustness:** Selects representative
-    stratifications that demonstrate robustness across variations in
-    depth, distance metrics, or clustering methods.
+```{r}
+table <- data.frame(Nomenclature=c("a","b","c","d"), 
+                    `Distance Metric`=rep(c("Correlation", "Gower"), each=2), 
+                    `Clustering Method`=c("K-means", "Hierarchical Clustering", 
+                                          "K-medoids", "Hierarchical-Clustering"))
+knitr::kable(table, align = c("l", "l", "l"))
+```
 
-Additionally, the package includes functions to:
-
--   **Validate Output:** Allows validation using true labels when
-    available.
-
--   **Visualize Patient Flow:** Offers a Sankey diagram to illustrate
-    patient flow between clusters when comparing two candidate
-    stratifications.
-
-![](img/workflow.jpg)
+![Schematic representation of the ClustAll pipeline](img/workflow.jpg)
 
 # 1. Installation
 
-ClustAll is developed using S4 object-oriented programming, and requires
-R (\>=4.2.0). ClustAll utilizes many other R packages that are currently
-available from CRAN, Bioconductor and GitHub.
+ClustAll is developed using S4 object-oriented programming, and requires R (\>=4.2.0). ClustAll utilizes other R packages that are currently available from CRAN and Bioconductor.
 
 ```{r installation, eval=FALSE}
 if (!require("devtools", quietly = TRUE))
@@ -69,469 +53,115 @@ if (!require("devtools", quietly = TRUE))
 devtools::install_github("TranslationalBioinformaticsUnit/ClustAll")
 ```
 
-After installation, you should be able to load the ClustAll package in
-your R session:
+After installation, load the ClustAll package:
 
 ```{r load}
 library(ClustAll)
 ```
 
-# 2. ClustAll workflow
+# 2. ClustAll Application Example
 
-ClustAll constitutes a friendly workflow that comprises 8 functions:
+**Breast Cancer Wisconsin (Diagnostic)** ClustAll includes a real dataset of breast cancer ([doi: 10.24432/C5DW2B](https://doi.org/10.24432/C5DW2B)). This dataset comprises two types of features ---categorical and numerical--- derived from a digitized image of a fine needle aspirate (FNA) of a breast mass from 659 patients. Each patient is characterized by 30 features (10x3) and belongs to one of two target classes: 'malignant' or 'benign'. To showcase ClustAll's when dealing with missing data, a modification with random missing values was applied to the dataset, demonstrating the package's resilience in handling missing data. The breast cancer dataset includes the following features:
 
-#### `createClustAll`
+  a)  **radius:** Mean of distances from the center to points on the perimeter.
+  b)  **texture:** Standard deviation of gray-scale values.
+  c)  **perimeter**
+  d)  **area**
+  e)  **smoothness:** Local variation in radius lengths.
+  f)  **compactness:** (Perimeter\^2 / Area) - 1.0.
+  g)  **concavity:** Severity of concave portions of the contour.
+  h)  **concave points:** Number of concave portions of the contour.
+  i)  **symmetry**
+  j)  **fractal dimension:** "Coastline approximation" - 1.
 
-The `createClustAll` function is a key component of the ClustAll
-workflow. It serves the purpose of creating an S4 object of class
-`ClustAllObject`. This object is specifically designed to facilitate the
-application of the ClustAll algorithm and to store the primary results
-of the clustering process.
+The dataset also includes the patient ID and diagnosis (M = malignant, B = benign).
 
-**Usage:**
+## 2.1 Get data from example
 
-```         
-createClustAll(data_use, nImputation, dataImputed)
-```
-
-**Arguments:**
-
--   `data_use`: A dataframe containing the original dataset. This
-    dataset may include missing values (NAs).
-
--   `nImputation`: A numeric value indicating the number of imputations
-    to be computed if the original dataset contains NAs.
-
--   `dataImputed`: A mids object created with the mice R package. It
-    should represent the imputed data used for clustering, and the
-    `data_use` and `dataImputed` datasets must originate from the same
-    source and include the same variables.\
-
-The ClustAll pipeline is versatile, accommodating three possible
-scenarios based on the nature of the input data.
-
-1.  **No Missing Values:** In scenarios where the initial dataset **does
-    not contain any missing values (NAs)**, the use of `nImputation` and
-    `dataImputed` is not required.
-2.  **Missing Values Imputed Within ClustAll Framework:** When the
-    initial dataset **contains missing values (NAs)**, the ClustAll
-    pipeline offers an integrated solution for imputation using the
-    `mice` package. In this case:
-    -   `nImputations` is a required parameter to specify the number of
-        imputations to be computed within the ClustAll framework.
-    -   `dataImputed` is not required, as the imputations are handled
-        internally.
-3.  **External Imputation with Imputed Data (`mids` class):** If the
-    initial dataset **contains missing values (NAs)**, but the
-    imputations have been conducted externally (resulting in an imputed
-    dataset of class `mids`), the following parameters are needed:
-    -   `nImputations` is not required.
-    -   `dataImputed` is necessary to provide the imputed dataset, and
-        it should be of the `mids` class.
-
-These scenarios offer flexibility in adapting the ClustAll pipeline to
-various data conditions, providing users with options depending on their
-data preprocessing needs.
-
-#### `runClustAll`
-
-The `runClustAll` method is a pivotal function in the ClustAll pipeline,
-responsible for executing the ClustAll algorithm and producing
-clustering results.
-
-**Usage:**
-
-```         
-runClustAll(Object, threads, simplify)
-```
-
-**Arguments:**
-
--   `Object`: A ClustAllObject-class object, created using the
-    `createClustAll` function.
-
--   `threads`: A numeric value specifying the number of cores to use for
-    parallel computing. This parameter enables users to accelerate the
-    computation process.
-
--   `simplify`: A logical value. If set to `TRUE`, only one out of the
-    four depths of the dendrogram is considered, streamlining the
-    results for simplicity. If set to `FALSE`, all possible depths of
-    the dendrogram are considered, offering a more detailed clustering
-    analysis.
-
-This method is crucial for running the ClustAll algorithm efficiently,
-and the parameters allow users to customize the computational aspects of
-the process based on their preferences and system capabilities.
-
-#### `plotJACCARD`
-
-The `plotJACCARD` function is designed to generate a correlation matrix
-heatmap that visually represents the Jaccard Distance between
-population-robust stratifications stored within a ClustAllObject-class
-object.
-
-**Usage:**
-
-```         
-plotJACCARD(Object, paint, stratification_similarity)
-```
-
-**Arguments:**
-
--   `Object`: A ClustAllObject-class object created using the
-    createClustAll function, containing the results of the ClustAll
-    algorithm.
-
--   `paint`: A logical value. When set to `TRUE`, groups of similar
-    stratifications are highlighted within a red square, enhancing the
-    visualization of stratification patterns.
-
--   `stratification_similarity`: A numeric value representing the
-    minimum Jaccard Distance required to consider a pair of
-    stratifications as similar. The default value is set to 0.7, but
-    users can adjust this threshold based on their specific needs.
-
-This function is valuable for gaining insights into the relationships
-between different stratifications and understanding the robustness of
-population clustering within the context of the ClustAll analysis.
-
-#### `resStratification`
-
-The `resStratification` function is designed to retrieve stratification
-representatives by filtering out those that do not contain clusters
-representing a minimum percentage of the total population. This function
-offers flexibility, allowing users to obtain either all robust
-stratifications or a single representative from each group of similar
-stratifications.
-
-**Usage:**
-
-```         
-resStratification(Object, population, stratification_similarity, all)
-```
-
-**Arguments**:
-
--   `Object`: A ClustAllObject-class object created using the
-    createClustAll function, containing the results of the ClustAll
-    algorithm.
--   `population`: A numeric value indicating the minimum percentage of
-    the total population that a cluster in a stratification must have to
-    be considered as representative. The default is set to 0.05 (5%).
--   `stratification_similarity`: A numerical value representing the
-    minimum Jaccard Distance required to consider a pair of
-    stratifications as similar. The default is set to 0.7.
--   `all`: A logical value. When set to `TRUE`, the function returns all
-    similar representative stratifications. If set to `FALSE`, only the
-    centroid stratification for each group of similar stratifications is
-    returned.
-
-This function is useful for extracting meaningful representations of
-robust stratifications, enabling users to focus on key clusters within
-the population and streamline the interpretation of the clustering
-results.
-
-#### `plotSANKEY`
-
-The `plotSankey` function is designed to generate a Sankey diagram
-comparing two selected clusters within the ClustAllObject-class object.
-This visualization aids in the comparison of stratifications, providing
-insights into the flow and distribution of elements between the chosen
-clusters.
-
-**Usage:**
-
-```         
-plotSankey(Object, clusters)
-```
-
-**Arguments:**
-
--   `Object`: A ClustAllObject-class object created using the
-    `createClustAll` function, containing the results of the ClustAll
-    algorithm.
-
--   `clusters`: A character vector with the names of a pair of
-    stratifications. The names can be obtained using the
-    `resStratification` function.
-
-This function is particularly valuable for visually assessing the
-differences and similarities between two selected clusters, allowing for
-a more intuitive understanding of the population distribution within the
-context of the ClustAll analysis.
-
-#### `cluster2data`
-
-The `cluster2data` function is designed to retrieve a dataframe that
-combines the original dataset with the selected ClustAll
-stratification(s), which are included as additional variables. This
-allows users to explore and analyze the original data in the context of
-the identified clusters.
-
-**Usage:**
-
-```         
-cluster2data(Object, clusterName)
-```
-
-**Arguments:**
-
--   `Object`: A ClustAllObject-class object created using the
-    `createClustAll` function, containing the results of the ClustAll
-    algorithm.
-
--   `clusterName`: A character vector with one or more stratification
-    names. These names are used to select the specific ClustAll
-    stratifications that will be included as variables in the resulting
-    dataframe.
-
-This function is allows the integration of the clustering information
-back into the original dataset, facilitating further analysis and
-interpretation of the data within the context of the identified
-clusters.
-
-#### `Validation`
-
-The `Validation` function is designed to validate the results obtained
-from one or more (multiple) robust stratifications by comparing them
-with the original data labels, provided the original data labeling is
-available.
-
-**Usage:**
-
-``` r
-Validation(Object, stratificationName)
-```
-
-**Arguments:**
-
--   `Object`: A ClustAllObject-class object created using the
-    `createClustAll` function, containing the results of the ClustAll
-    algorithm. This function serves the step for assessing the
-    reliability of the obtained robust stratifications. By comparing
-    them with the original data labels (if available), it provides a
-    validation mechanism to evaluate the accuracy and consistency of the
-    clustering results in relation to the true underlying patterns in
-    the data.
-
-Note: Ensure that the original data labeling is present in the
-ClustAllObject for this step.
-
-# 3. Real data scenario:
-
-## Breast Cancer Wisconsin (Diagnostic)
-
-This package contains a real dataset of breast cancer ([doi:
-10.24432/C5DW2B](https://doi.org/10.24432/C5DW2B)). The dataset
-comprises two types of features ---categorical and numerical--- derived
-from a digitized image of a fine needle aspirate (FNA) of a breast mass
-from 659 patients. Each patient is characterized by 30 features (10x3)
-and belongs to one of two target classes: 'malignant' or 'benign'.
-
-To showcase ClustAll's when dealing with missing data, a modification
-with random missing values was applied to the dataset, demonstrating the
-package's resilience in handling missing data. The breast cancer dataset
-includes the following features:
-
-a)  **radius:** Mean of distances from the center to points on the
-    perimeter.
-b)  **texture:** Standard deviation of gray-scale values.
-c)  **perimeter**
-d)  **area**
-e)  **smoothness:** Local variation in radius lengths.
-f)  **compactness:** (Perimeter\^2 / Area) - 1.0.
-g)  **concavity:** Severity of concave portions of the contour.
-h)  **concave points:** Number of concave portions of the contour.
-i)  **symmetry**
-j)  **fractal dimension:** "Coastline approximation" - 1.
-
-The dataset also includes the patient ID and diagnosis (M = malignant, B
-= benign).
-
-### 3.1 Get data from example file
+We load the breast cancer dataset. An initial exploration reveals the absence of missing values. The dataset comprises 30 numerical features and one categorical feature. As the initial data does not contain missing values we will apply the ClustAll workflow accordingly.
 
 ```{r}
 # load example data
 data("BreastCancerWisconsin", package = "ClustAll") 
-
-# remove patients ID (non-informative), and diagnosis as it is the "true label"
-data_use <- subset(wdbc,select=-ID)
-
-# explore the features of example data
-str(data_use)
+# remove patients IDs (non-informative)
+data_use <- subset(wdbc, select=-ID)
+# check the presence of missing values
+sum(is.na(data_use))
 ```
 
-### 3.2 Scenario 1: Data with no missing values
+## 2.2 Create the ClustAll object
 
-#### 3.2.1 Create the ClustAll object
+First, the ClustAllObject object is created and stored. In this step, we indicate that "Diagnosis" is the feature that contains the true labels in the argument `colValidation`.
 
 ```{r}
-obj_noNA <- createClustAll(data = data_use, colValidation = "Diagnosis",
-                           nImputation = NULL, dataImputed = NULL)
+obj_noNA <- createClustAll(data = data_use, nImputation = NULL, 
+                           dataImputed = NULL, colValidation = "Diagnosis")
 ```
 
-```{r}
-str(obj_noNA)
-```
+## 2.3 Execute the ClustAll algorithm
 
-#### 3.2.2 Execute the ClustAll algorithm
+Next, we apply the ClustAll algorithm. The output is stored in a ClustAllObject, which contains the clustering results.
 
 ```{r, results=FALSE}
-# Considering all the depths of the dendrogram, otherwise set simplify to TRUE
 obj_noNA1 <- runClustAll(Object = obj_noNA, threads = 2, simplify = FALSE)
 ```
 
-#### 3.2.3 Represent the Jaccard Distance between population-robust stratifications
+Have a look to the object.
+
+```{r}
+obj_noNA1
+```
+
+## 2.4 Represent the Jaccard Distance between population-robust stratifications
+
+The heatmap below presents a correlation matrix depicting the similarity between population-robust stratifications (\>85% bootstrapping stability). Additionally, discontinuous red rectangles highlight alternative stratifications solutions based on those stratifications that exhibit a level of similarity (0-1) specified in the `stratification_similarity` argument. The heatmap row annotation describes the combination of parameters ---distance metric, clustering method, and embedding number--- from which each stratification is derived. In this specific case, a similarity of 0.88 reveals three different groups of alternatives for stratifying the population, indicated by the the red rectangles.
 
 ```{r, results=FALSE, warning=FALSE}
 plotJACCARD(Object = obj_noNA1, stratification_similarity = 0.88)
 ```
 
-#### 3.2.4 Retrieve stratification representatives
+## 2.5 Retrieve stratification representatives
+
+The centroids (a representative) from each groupo of alternative stratification solutions (highlighted in red squares in the previous step) are displayed. Each representative stratification illustrates the number of clusters and the patients belonging to each cluster. In this case, the alternative stratifications have been computed with the following specifications: - cuts_a_9: This stratification was generated using Embedding 9 with the correlation distance metric and the kmeans clustering algorithm. It consists of two clusters, with 193 and 376 patients, respectively. - cuts_c_3: This stratification was generated using Embedding 3 with the gower distance metric and the kmedoids clustering algorithm. It consists of two clusters, with 199 and 370 patients, respectively. - cuts_b_9: This stratification was generated using Embedding 9 with the correlation distance metric and the hierarchical clustering algorithm. It consists of two clusters, with 199 and 370 patients, respectively.
 
 ```{r}
 resStratification(Object = obj_noNA1, population = 0.05, 
                   stratification_similarity = 0.88, all = FALSE)
 ```
 
-#### 3.2.5 Generate Sankey diagrams comparing pairs of stratifications, or a stratification with true labels
+## 2.6 Generate Sankey diagrams comparing pairs of stratifications, or a stratification with true labels
+
+The first Sankey plot illustrates patient transitions between two sets of representative stratifications (cuts_c_3 and cuts_a_9), revealing the flow and distribution of patients across the clusters. The second Sankey plot illustrates patient transitions between a representative stratifications (cuts_a_9) and the true labels, revealing the flow and distribution of patients across the clusters.
 
 ```{r}
-plotSANKEY(Object = obj_noNA1, clusters = c("cuts_c_3","cuts_a_9"), validationData = FALSE)
+plotSANKEY(Object = obj_noNA1, clusters = c("cuts_c_3","cuts_a_9"), 
+           validationData = FALSE)
 
-plotSANKEY(Object = obj_noNA1, clusters = c("cuts_c_3","cuts_b_13"), validationData = FALSE)
-
-plotSANKEY(Object = obj_noNA1, clusters = c("cuts_a_9"), validationData = TRUE)
+plotSANKEY(Object = obj_noNA1, clusters = c("cuts_a_9"), 
+           validationData = TRUE)
 ```
 
-#### 3.2.6 Retrieve the original dataset with the selected ClustAll stratification(s)
+## 2.7 Retrieve the original dataset with the selected ClustAll stratification(s)
+
+The three stratification representatives are added to the initial dataset to facilitate further exploration.
 
 ```{r}
 df <- cluster2data(Object = obj_noNA1,
-                   stratificationName = c("cuts_c_3","cuts_a_9","cuts_b_13"))
+                   stratificationName = c("cuts_c_3","cuts_a_9","cuts_b_9"))
 ```
 
-#### 3.2.7 Assess the results the sensitivity and specifity of the selected ClustAll stratifications against true labels (if available)
+## 2.8 Assess the results the sensitivity and specifity of the selected ClustAll stratifications against true labels (if available)
+
+To evaluate the performance of the selected ClustAll stratifications against true labels, sensitivity and specificity are assessed. Higher values indicate greater precision in the stratification process. In this particular case, all three stratification representatives exhibit a sensitivity and specificity exceeding 80% and 90%, respectively, despite being computed using different methods. These results underscore the notion that a robust stratification should be consistent across diverse clustering methods.
 
 ```{r}
 # STRATIFICATION 1
 validateStratification(obj_noNA1, "cuts_a_9")
-
 # STRATIFICATION 2
 validateStratification(obj_noNA1, "cuts_b_13")
-
 # STRATIFICATION 3
 validateStratification(obj_noNA1, "cuts_b_9")
 ```
-
-### 3.2 Scenario 2: Dataset with missing values and imputation performed within ClustAll framework
-
-#### 3.2.1 Create the ClustAll object and compute imputation
-
-```{r, results=FALSE}
-data("BreastCancerWisconsinMISSING", package = "ClustAll")
-data_use_NA <- wdbcNA
-colSums(is.na(data_use_NA)) # dataset present NAs
-
-obj_NA <- createClustAll(data_use_NA, nImputation = 2,  
-                         colValidation = "Diagnosis") 
-
-# The rest of the pipeline follows as a)
-```
-
-#### 3.2.2 Execute the ClustAll algorithm
-
-```{r, results=FALSE}
-obj_NA1 <- runClustAll(obj_NA, threads = 2) 
-```
-
-#### 3.3.3 Represent the Jaccard Distance between population-robust stratifications
-
-```{r, results=FALSE, warning=FALSE}
-plotJACCARD(Object = obj_NA1, stratification_similarity = 0.88)
-```
-
-#### 3.3.4 Retrieve stratification representatives
-
-```{r}
-resStratification(Object = obj_NA1, population = 0.05, 
-                  stratification_similarity = 0.88, all = FALSE)
-```
-
-#### 3.2.5 Generate Sankey diagrams comparing pairs of stratifications, or a stratification with true labels
-
-```{r}
-plotSANKEY(Object = obj_NA1, clusters = c("cuts_a_2","cuts_a_8"), 
-           validationData = FALSE)
-
-plotSANKEY(Object = obj_NA1, clusters = c("cuts_a_2"), 
-           validationData = TRUE)
-```
-
-#### 3.2.6 Retrieve the original dataset with the selected ClustAll stratification(s)
-
-```{r}
-df_NA <- cluster2data(Object = obj_NA1, stratificationName = c("cuts_a_2"))
-```
-
-#### 3.2.7 Assess the results the sensitivity and specifity of the selected ClustAll stratifications against true labels (if available)
-
-```{r}
-# STRATIFICATION 1
-validateStratification(obj_NA1, "cuts_a_2")
-```
-
-
-
-### 3.3 Scenario 3: Dataset with missing values and imputation performed externally
-
-#### 3.3.1 Create the ClustAll object and compute imputation
-
-Perform imputation and store in an mids object. In this case, mice
-package is used.
-
-```{r, results=FALSE}
-library(mice)
-data("BreastCancerWisconsinMISSING", package = "ClustAll") # load example data
-data_use_NA <- wdbcNA
-str(data_use_NA)
-
-imp_data_use <- mice(data_use_NA[-1], m=2, maxit = 5,seed=1234, print=FALSE)
-```
-
-
-#### 3.3.2 Create ClustAll object
-
-```{r, results=FALSE}
-# dataImputed contains the mids object with the imputed
-obj_imp1 <- createClustAll(data=data_use_NA, dataImputed = imp_data_use, 
-                           colValidation = "Diagnosis") 
-```
-
-#### 3.3.3 The rest of the pipeline follows as a)
-
-```{r, results=FALSE, eval=FALSE}
-# The rest of the pipeline follows as a)
-obj_imp1 <- runClustAll(obj_imp1, threads = 2) 
-
-# Represent the Jaccard Distance between population-robust stratifications
-plotJACCARD(Object = obj_imp1, stratification_similarity = 0.88)
-
-# Retrieve stratification representatives
-resStratification(Object = obj_imp1, population = 0.05, 
-                  stratification_similarity = 0.88, all = FALSE)
-
-# Generate Sankey diagrams comparing pairs of stratifications, or a stratification with true labels
-plotSANKEY(Object = obj_imp1, clusters = c("cuts_a_2","cuts_a_22"), validationData = FALSE)
-
-# Retrieve the original dataset with the selected ClustAll stratification(s)
-df_imp <- cluster2data(Object = obj_imp1, stratificationName = c("cuts_a_2"))
-
-# Validate stratification
-validateStratification(obj_imp1, "cuts_a_2")
-```
-
 
 Session Info
 

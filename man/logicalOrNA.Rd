@@ -5,6 +5,9 @@
 \alias{logicalOrNA}
 \alias{logicalOrNA-class}
 \title{logicalOrNA}
+\value{
+logicalOrNA class object
+}
 \description{
 Contains either logical, NULL or missing object
 }

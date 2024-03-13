@@ -10,6 +10,9 @@ A data frame with 660 rows and 31 variables
 \usage{
 data("BreastCancerWisconsinMISSING", package = "ClustAll")
 }
+\value{
+wdbcNA dataset
+}
 \description{
 We introduced random missing values to the wdbc dataset. \code{\link{wdbc}}
 }

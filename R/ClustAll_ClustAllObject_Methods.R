@@ -28,10 +28,11 @@
 #' @examples
 #' data("BreastCancerWisconsin", package = "ClustAll")
 #' wdbc <- subset(wdbc,select=c(-ID, -Diagnosis))
-#' wdbc <- wdbc[1:15,1:8]
 #' obj_noNA <- createClustAll(data = wdbc)
+#' \donttest{
 #' obj_noNA1 <- runClustAll(Object = obj_noNA, threads = 1, simplify = TRUE)
 #' plotJACCARD(obj_noNA1, paint = TRUE, stratification_similarity = 0.9)
+#' }
 #' @export
 setGeneric(
   name="plotJACCARD",
@@ -67,23 +68,23 @@ setMethod(
                           breaks=seq(0, 1, length.out = 25))
 
     legend <- HeatmapAnnotation(JACCARD_index = seq(0, 1,
-                                                    length.out = ncol(m)),
+                                length.out = ncol(m)),
                                 col = list(lg = col_fun),
                                 annotation_name_side = "right")
     ra <- rowAnnotation(
-      Distance=robust_stratification[,"Distance"],
-      Clustering=robust_stratification[,"Clustering"],
-      Depth=robust_stratification[,"Depth"],
-      col = list(Distance=structure(names=c("Correlation","Gower"),
-                                    c("#CCCCFF","blue4") ),
-                 Clustering=structure(names=c("Hierachical", "k-means",
-                                              "k-medoids"),
-                                      c("forestgreen", "sandybrown",
-                                        "tomato3")),
-                 Depth=colorRamp2(c(1,
-                                    round(max(robust_stratification[, "Depth"])/2),
-                                    max(robust_stratification[, "Depth"])),
-                                  c("darkcyan", "#F7DCCA", "#C75F97"))))
+            Distance=robust_stratification[,"Distance"],
+            Clustering=robust_stratification[,"Clustering"],
+            Depth=robust_stratification[,"Depth"],
+            col = list(Distance=structure(names=c("Correlation","Gower"),
+                                          c("#CCCCFF","blue4") ),
+                       Clustering=structure(names=c("Hierarchical", "k-means",
+                                                    "k-medoids"),
+                                            c("forestgreen", "sandybrown",
+                                              "tomato3")),
+                       Depth=colorRamp2(c(1,
+                                          round(max(robust_stratification[, "Depth"])/2),
+                                          max(robust_stratification[, "Depth"])),
+                                        c("darkcyan", "#F7DCCA", "#C75F97"))))
 
     hp <- Heatmap(as.matrix(m), name="hp", cluster_columns=FALSE,
                   cluster_rows=FALSE, left_annotation=ra, col=col_fun,
@@ -112,12 +113,12 @@ setMethod(
         start <- index[1] - 1
         finish <- index[2]
         decorate_heatmap_body("hp", row_slice = 1, column_slice = 1, {
-          grid.rect(unit(start/full_length, "npc"), unit(1-start/full_length,
-                                                         "npc"), # top left
-                    width = (finish-start)/full_length,
-                    height = (finish-start)/full_length,
-                    gp = gpar(lwd = 2.5, lty = 2.5, fill=FALSE, col="red"),
-                    just = c("left", "top"), draw = TRUE
+                        grid::grid.rect(unit(start/full_length, "npc"), unit(1-start/full_length,
+                                                                       "npc"), # top left
+                                  width = (finish-start)/full_length,
+                                  height = (finish-start)/full_length,
+                                  gp = gpar(lwd = 2.5, lty = 2.5, fill=FALSE, col="red"),
+                                  just = c("left", "top"), draw = TRUE
           )
         })
       }
@@ -156,11 +157,12 @@ setMethod(
 #' @examples
 #' data("BreastCancerWisconsin", package = "ClustAll")
 #' wdbc <- subset(wdbc,select=c(-ID, -Diagnosis))
-#' wdbc <- wdbc[1:15,1:8]
 #' obj_noNA <- createClustAll(data = wdbc)
+#' \donttest{
 #' obj_noNA1 <- runClustAll(Object = obj_noNA, threads = 1, simplify = TRUE)
 #' resStratification(Object = obj_noNA1, population = 0.05,
 #'                   stratification_similarity = 0.88, all = FALSE)
+#' }
 #'
 #' @export
 setGeneric(
@@ -200,26 +202,22 @@ setMethod(
       # percentage of the total population in each cluster. Default is 0.05 (5%)
       res <- chooseClusters(definitive_clusters, Object@summary_clusters,
                             population, all)
-      stratificationRep <- list()
-
-      if (all == TRUE) {
-        for (i in seq_len(length(res))) {
-          stratificationRep[[i]] <- list()
-
-          for (j in seq_len(length(res[[i]]))) {
-
-            stratificationRep[[i]][[j]] <- c(res[[i]][j],
-                                             table(Object@summary_clusters[[res[[i]][j]]]))
-            names(stratificationRep)[[i]] <- paste("Cluster_", i)
-          }
+      stratificationRep <- lapply(seq_along(res), function(i) {
+        if (all == TRUE) {
+          inner_list <- lapply(seq_along(res[[i]]), function(j) {
+            list(res[[i]][j], table(Object@summary_clusters[[res[[i]][j]]]))
+          })
+          names(inner_list) <- paste("Cluster_", seq_along(res[[i]]))
+          inner_list
+        } else {
+          list(table(Object@summary_clusters[[res[[i]]]]))
         }
+      })
 
-      } else {
-        for(i in seq_len(length(res))) {
-          stratificationRep[[i]] <- list(table(Object@summary_clusters[[res[[i]]]]))
-          names(stratificationRep)[i] <- res[[i]]
-        }
+      if (all == FALSE) {
+        names(stratificationRep) <- res
       }
+
 
       return(stratificationRep)
 
@@ -251,13 +249,14 @@ setMethod(
 #' @examples
 #' data("BreastCancerWisconsin", package = "ClustAll")
 #' wdbc <- subset(wdbc,select=c(-ID, -Diagnosis))
-#' wdbc <- wdbc[1:15,1:8]
 #' obj_noNA <- createClustAll(data = wdbc)
+#' \donttest{
 #' obj_noNA1 <- runClustAll(Object = obj_noNA, threads = 1, simplify = TRUE)
 #' resStratification(Object = obj_noNA1, population = 0.05,
 #'                   stratification_similarity = 0.88, all = FALSE)
 #' df <- cluster2data(Object = obj_noNA1,
 #'                    stratificationName = c("cuts_a_1","cuts_b_5","cuts_a_5"))
+#' }
 #' @export
 setGeneric(
   name="cluster2data",
@@ -313,6 +312,7 @@ setMethod(
 #' wdbc <- wdbc[1:15,1:8]
 #' label <- label[16:30]
 #' obj_noNA <- createClustAll(data = wdbc)
+#' \donttest{
 #' obj_noNA1 <- runClustAll(Object = obj_noNA, threads = 1, simplify = TRUE)
 #' resStratification(Object = obj_noNA1, population = 0.05,
 #'                   stratification_similarity = 0.88, all = FALSE)
@@ -320,6 +320,7 @@ setMethod(
 #'
 #' obj_noNA1 <- addValidationData(obj_noNA1, label)
 #' plotSANKEY(Object = obj_noNA1, clusters = "cuts_a_1", validationData=TRUE)
+#' }
 #'
 #' @export
 setGeneric(
@@ -376,19 +377,17 @@ setMethod(
     source <- sort(rep(names1, times=length(unique(df[,clusters[2]]))))
     target <- rep(names2, times=length(unique(df[,clusters[1]])))
 
-    value <- c()
-
-    for (i in unique(df[,1])) {
-      df_tmp <- df[which(df[,1] == i),]
+    value <- unlist(lapply(unique(df[, 1]), function(i) {
+      df_tmp <- df[df[, 1] == i, ]
       tmp <- nrow(df)
-      for (j in unique(df[,2])) {
-        value <- c(value, length(which(df_tmp[,2] == j))/tmp)
-      }
-    }
+      unlist(lapply(unique(df[, 2]), function(j) {
+        length(which(df_tmp[, 2] == j)) / tmp
+      }))
+    }))
 
     links <- data.frame(source = source,
                         target = target,
-                        value=value)
+                        value = value)
 
     nodes <- data.frame(name=c(as.character(links$source),
                                as.character(links$target)) %>% unique()
@@ -397,10 +396,10 @@ setMethod(
     links$IDsource <- match(links$source, nodes$name)-1
     links$IDtarget <- match(links$target, nodes$name)-1
 
-    plot <- sankeyNetwork(Links = links, Nodes = nodes,
-                          Source = "IDsource", Target = "IDtarget",
-                          Value = "value", NodeID = "name",
-                          sinksRight=FALSE)
+    plot <- networkD3::sankeyNetwork(Links = links, Nodes = nodes,
+                                     Source = "IDsource", Target = "IDtarget",
+                                     Value = "value", NodeID = "name",
+                                     sinksRight=FALSE)
 
     return(plot)
   }
@@ -432,12 +431,14 @@ setMethod(
 #' wdbc <- wdbc[1:15,1:8]
 #' label <- label[16:30]
 #' obj_noNA <- createClustAll(data = wdbc)
+#' \donttest{
 #' obj_noNA1 <- runClustAll(Object = obj_noNA, threads = 1, simplify = TRUE)
 #' resStratification(Object = obj_noNA1, population = 0.05,
 #'                   stratification_similarity = 0.88, all = FALSE)
 #' obj_noNA1 <- addValidationData(Object = obj_noNA1,
 #'                                dataValidation = label)
 #' validateStratification(obj_noNA1, "cuts_a_1")
+#' }
 #'
 #' @export
 setGeneric(
@@ -479,7 +480,7 @@ setMethod(
     sensitivity <- res[3]/(res[3]+res[4])
     specifity <- res[2]/(res[2]+res[1])
     showRes <- c(sensitivity, specifity)
-    names(showRes) <- c("sensitivity", "specificity")
+    base::names(showRes) <- c("sensitivity", "specificity")
 
     return(showRes)
   }

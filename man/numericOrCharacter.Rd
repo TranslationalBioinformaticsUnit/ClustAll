@@ -5,6 +5,9 @@
 \alias{numericOrCharacter}
 \alias{numericOrCharacter-class}
 \title{numericOrCharacter}
+\value{
+numericOrCharacter class object
+}
 \description{
 Contains either numeric or character object
 }
