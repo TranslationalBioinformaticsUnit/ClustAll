@@ -22,7 +22,7 @@ ClustAll requires a minimum of two features as input. Depending on wether there 
 
 -   **Validation**, for assessing the reliability of clustering results using ground truth (if available).
 
--   **Visualization** functions for interpreting clustering results and comparing different stratifications.
+-   **Visualization**, functions for interpreting clustering results and comparing different stratifications.
 
 
 ![](vignettes/img/workflow.jpg)
