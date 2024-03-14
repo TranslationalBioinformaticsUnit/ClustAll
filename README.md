@@ -50,7 +50,7 @@ library(ClustAll)
 data("BreastCancerWisconsin", package = "ClustAll") # load the data 
 obj_noNA <- createClustAll(data = data_use, nImputation = NULL,            # Create the object
                            dataImputed = NULL,colValidation = "Diagnosis")
-obj_noNA1 <- runClustAll(Object = obj_noNA, threads = 2, simplify = FALSE) # Run the algotirhm
+obj_noNA1 <- runClustAll(Object = obj_noNA, threads = 2, simplify = FALSE) # Run the algorithm
 plotJACCARD(Object = obj_noNA1, stratification_similarity = 0.88)          # Explore robust stratifications
 resStratification(Object = obj_noNA1, population = 0.05, 
                   stratification_similarity = 0.88, all = FALSE)
