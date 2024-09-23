@@ -59,7 +59,7 @@ biological or clinical relevance of clustering results:
     \item Higher sensitivity indicates better identification of the positive class.
     \item Higher specificity indicates better identification of the negative classes.
     \item The function automatically adjusts calculations if necessary to ensure
-      sensitivity and specificity are always ≥ 0.5.
+      sensitivity and specificity are always higher than 0.5.
   }
 }
 
