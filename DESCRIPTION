@@ -2,7 +2,7 @@ Package: ClustAll
 Type: Package
 Title: ClustAll: Data driven strategy to find groups
         of patients within complex diseases
-Version: 1.0.3
+Version: 1.0.2
 Authors@R: c(person("Asier", "Ortega-Legarreta", role = c("aut","cre"),  
            email = "aortegal@navarra.es", 
            comment = c(ORCID = "0009-0000-3563-5362")),
